@@ -1,45 +1,46 @@
 const Joi = require("joi");
+const { ValidationError, WrongBodyError } = require("../helpers/errors");
 
 module.exports = {
   addContactValidation: (req, res, next) => {
     const schema = Joi.object({
-      name: Joi.string().alphanum().min(3).max(20).required(),
+      name: Joi.string().min(3).max(20).required(),
       email: Joi.string()
         .email({ minDomainSegments: 2, tlds: { allow: ["com", "net"] } })
         .required(),
       phone: Joi.string().min(13).required(),
     });
     const validationResult = schema.validate(req.body);
-    const { name, email, phone } = req.body;
-    if (!name) {
-      return res.status(404).json({ message: `missing required name field` });
-    }
-    if (!email) {
-      return res.status(404).json({ message: `missing required email field` });
-    }
-    if (!phone) {
-      return res.status(404).json({ message: `missing required phone field` });
-    }
+
     if (validationResult.error) {
-      return res.status(400).json({ status: validationResult.error.details });
+      if (validationResult.error.details[0].type === "any.required") {
+        const [text] = validationResult.error.details[0].path;
+        next(new WrongBodyError(`missing required ${text} field`));
+      } else {
+        next(new ValidationError(validationResult.error.details[0].message));
+      }
     }
+
     next();
   },
   putContactValidation: (req, res, next) => {
     const schema = Joi.object({
-      name: Joi.string().alphanum().min(3).max(20).optional(),
+      name: Joi.string().min(3).max(20).optional(),
       email: Joi.string()
         .email({ minDomainSegments: 2, tlds: { allow: ["com", "net"] } })
         .optional(),
       phone: Joi.string().min(13).optional(),
-    });
+    }).min(1);
     const validationResult = schema.validate(req.body);
+
     if (validationResult.error) {
-      return res.status(400).json({ status: validationResult.error.details });
+      if (validationResult.error.details[0].type === "object.min") {
+        next(new ValidationError("missing fields"));
+      } else {
+        next(new ValidationError(validationResult.error.details[0].message));
+      }
     }
-    if (Object.keys(req.body).length === 0) {
-      return res.status(400).json({ message: "missing fields" });
-    }
+
     next();
   },
   updateStatusValidation: (req, res, next) => {
@@ -54,6 +55,36 @@ module.exports = {
       } else {
         next(new ValidationError(validationResult.error.details[0].message));
       }
+    }
+
+    next();
+  },
+  postUserValidation: (req, res, next) => {
+    const schema = Joi.object({
+      email: Joi.string()
+        .email({ minDomainSegments: 2, tlds: { allow: ["com", "net"] } })
+        .required(),
+      password: Joi.string().min(6).required(),
+    });
+    const validationResult = schema.validate(req.body);
+
+    if (validationResult.error) {
+      next(new ValidationError(validationResult.error.details[0].message));
+    }
+
+    next();
+  },
+  patchUserSubscriptionValidation: (req, res, next) => {
+    const schema = Joi.object({
+      subscription: Joi.string()
+        .allow("starter", "pro", "business")
+        .only()
+        .required(),
+    });
+    const validationResult = schema.validate(req.body);
+
+    if (validationResult.error) {
+      next(new ValidationError(validationResult.error.details[0].message));
     }
 
     next();
