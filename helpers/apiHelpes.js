@@ -1,17 +1,13 @@
-const { ValidationError, WrongPramError, WrongBodyError } = require("./errors");
+const { ParentsValidationError } = require("./errors");
 
-const asyncWrapper = (contrller) => {
+const asyncWrapper = (controller) => {
   return (req, res, next) => {
-    contrller(req, res).catch(next);
+    controller(req, res).catch(next);
   };
 };
 
 const errorHandler = (error, req, res, next) => {
-  if (
-    error instanceof ValidationError ||
-    error instanceof WrongPramError ||
-    error instanceof WrongBodyError
-  ) {
+  if (error instanceof ParentsValidationError) {
     return res.status(error.status).json({ message: error.message });
   }
   console.log(error);
