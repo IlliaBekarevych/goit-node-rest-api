@@ -57,10 +57,20 @@ const currentUser = async (id) => {
   return user;
 };
 
+const updateAvatar = async (id, url) => {
+  const { avatarURL } = await User.findOneAndUpdate(
+    { _id: id },
+    { avatarURL: url },
+    { new: true }
+  );
+  return avatarURL;
+};
+
 module.exports = {
   registration,
   login,
   logout,
   currentUser,
   patchUserSubscription,
+  updateAvatar,
 };
