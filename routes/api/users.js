@@ -6,6 +6,7 @@ const {
 const { userCtrl } = require("../../controllers");
 const { asyncWrapper } = require("../../helpers/apiHelpes");
 const { authMiddleware } = require("../../middlewares/authMiddleware");
+const upload = require("../../middlewares/uploadMiddleware");
 
 const router = new express.Router();
 router
@@ -27,6 +28,12 @@ router
 router
   .route("/current")
   .get(authMiddleware, asyncWrapper(userCtrl.currentController));
+router.patch(
+  "/avatars",
+  authMiddleware,
+  upload.single("avatar"),
+  asyncWrapper(userCtrl.avatarController)
+);
 
 router.use((_, res, __) => {
   res.status(404).json({
