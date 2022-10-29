@@ -3,6 +3,7 @@ const { User } = require("../db/usersModel");
 const { NoAuthorizedError, AuthConflictError } = require("../helpers/errors");
 require("dotenv").config();
 const secret = process.env.SECRET_KEY;
+const { sendEmail } = require("./emailServices");
 
 const patchUserSubscription = async (id, subscription) => {
   const user = await User.findById(id);
@@ -24,6 +25,23 @@ const registration = async ({ email, password }) => {
   await newUser.save();
   const userFind = await User.findOne({ email }, { email: 1, subscription: 1 });
   return userFind;
+};
+
+const verify = async (token) => {
+  const user = await User.findOne({ verificationToken: token });
+
+  if (user) {
+    await user.updateOne({ verify: true, verificationToken: null });
+    return true;
+  }
+};
+
+const reVerify = async (email) => {
+  const user = await User.findOne({ email, verify: false });
+  if (user) {
+    await sendEmail(user.verificationToken, email);
+    return true;
+  }
 };
 
 const login = async ({ email, password }) => {
@@ -68,6 +86,8 @@ const updateAvatar = async (id, url) => {
 
 module.exports = {
   registration,
+  verify,
+  reVerify,
   login,
   logout,
   currentUser,

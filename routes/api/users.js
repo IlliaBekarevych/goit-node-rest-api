@@ -2,6 +2,7 @@ const express = require("express");
 const {
   postUserValidation,
   patchUserSubscriptionValidation,
+  emailBodyValidation,
 } = require("../../middlewares/validationMiddleware");
 const { userCtrl } = require("../../controllers");
 const { asyncWrapper } = require("../../helpers/apiHelpes");
@@ -19,6 +20,15 @@ router
 router
   .route("/signup")
   .post(postUserValidation, asyncWrapper(userCtrl.registrationController));
+router.get(
+  "/verify/:verificationToken",
+  asyncWrapper(userCtrl.verifyController)
+);
+router.post(
+  "/verify",
+  emailBodyValidation,
+  asyncWrapper(userCtrl.reVerifyController)
+);
 router
   .route("/login")
   .get(postUserValidation, asyncWrapper(userCtrl.loginController));
